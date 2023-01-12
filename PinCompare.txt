@@ -1,0 +1,18 @@
+DATASTREAM
+-----------
+
+V3 | SOIL | SMOKE
+
+V5 | MOTION ALERT | FIRE ALERT
+
+V6 | PIR | Flame
+
+V12 | PUMP | EXTINGUISER
+---------------------------------------------------------------------------
+
+EVENTS
+-------
+
+smokedetected | 
+
+fire_alert | 
