@@ -1,0 +1,81 @@
+
+// Fill-in information from your Blynk Template here
+#define BLYNK_TEMPLATE_ID "TMPLjxG2JFEK"
+#define BLYNK_DEVICE_NAME "TECHSNAP"
+#define BLYNK_FIRMWARE_VERSION        "0.2.0"
+#define USE_WEMOS_D1_MINI
+#define BLYNK_PRINT Serial                    //#define BLYNK_DEBUG
+#define APP_DEBUG
+#include "BlynkEdgent.h"
+#include <Servo.h>
+#include <MQ2.h>
+#include <DHT.h>
+#define DHTPIN 2          // Mention the digital pin where you connected 
+#define DHTTYPE DHT11     // DHT 11  
+
+float lpg, co, smoke;
+int pin = A0;
+int data = 0;
+int sensorThres = 100;
+int pump=D4;
+
+BlynkTimer timer;
+Servo myservo;
+MQ2 mq2(A0);
+DHT dht(DHTPIN, DHTTYPE);
+
+void sendSensor(){
+ 
+ float* values = mq2.read(true); //set it false if you don't want to print the values to the Serial
+  co = mq2.readCO();
+  smoke = mq2.readSmoke();
+  lpg = mq2.readLPG();
+
+  Blynk.virtualWrite(V5, smoke);
+  Blynk.virtualWrite(V2, lpg);
+  Blynk.virtualWrite(V3, co);
+  if (smoke > 50 ) {
+    Blynk.logEvent("fire_alert", "Smoke Detected!");}
+}
+void sendSensor2(){
+  float t = dht.readTemperature(); // or dht.readTemperature(true) for Fahrenheit
+  if (isnan(t)) {
+    Serial.println("Failed to read from DHT sensor!");
+    return;
+  }
+BLYNK_WRITE(V12)                // To turn on Fire Extinguisher
+{
+  int pinValue = param.asInt(); // assigning incoming value from pin V12 to a variable
+  digitalWrite(pump,pinValue);
+  // process received value
+}
+BLYNK_WRITE(V1)                 //To control servo attached with window
+{
+  int pinValue = param.asInt(); // assigning incoming value from pin V1 to a variable
+  myservo.write(pinValue);
+  Blynk.virtualWrite(V1, pinValue);
+  // process received value
+}
+
+Blynk.virtualWrite(V0, t);
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(100);
+
+  pinMode(pump,OUTPUT);
+  pinMode(pin,INPUT);
+  myservo.attach(D8);
+  dht.begin();
+  mq2.begin();
+  BlynkEdgent.begin();
+  timer.setInterval(2500L, sendSensor);
+  timer.setInterval(2500L, sendSensor2);
+}
+
+void loop() {
+  BlynkEdgent.run();
+  timer.run();
+}
+
